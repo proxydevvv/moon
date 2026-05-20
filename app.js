@@ -123,6 +123,7 @@ function bindEvents() {
 
   elements.proxyIframe.addEventListener('load', () => {
     hideLoading();
+    _clientFallbackIndex = 0;
     if (window._proxyLoadTimer) {
       clearTimeout(window._proxyLoadTimer);
       window._proxyLoadTimer = null;
@@ -173,6 +174,12 @@ let settings = { ...defaultSettings };
 let currentTargetUrl = 'about:blank';
 let currentProxyUrl = 'about:blank';
 let bugReportCooldown = false;
+const clientFallbackProxies = [
+  'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
+  'https://thingproxy.freeboard.io/fetch/',
+];
+let _clientFallbackIndex = 0;
 
 function loadSettings() {
   const saved = localStorage.getItem(storageKey);
@@ -279,8 +286,23 @@ function openProxy(value, silent = false) {
   if (window._proxyLoadTimer) clearTimeout(window._proxyLoadTimer);
   // If the iframe doesn't report ready within a few seconds, alert the user — many large sites block embedding (e.g., YouTube)
   window._proxyLoadTimer = setTimeout(() => {
-    showToast('This site may refuse to embed or use advanced protections. Try opening externally.');
-    hideLoading(true);
+    // First, try client-side public CORS proxies if the server proxy didn't respond.
+    if (_clientFallbackIndex < clientFallbackProxies.length) {
+      const proxyBase = clientFallbackProxies[_clientFallbackIndex++];
+      const fallbackUrl = proxyBase + encodeURIComponent(url);
+      if (settings.proxyLogs) console.log('Switching to client fallback proxy:', fallbackUrl);
+      elements.proxyIframe.src = fallbackUrl;
+      // give the fallback another timeout
+      window._proxyLoadTimer = setTimeout(() => {
+        showToast('This site may refuse to embed or use advanced protections. Try opening externally.');
+        hideLoading(true);
+        _clientFallbackIndex = 0;
+      }, 9000);
+    } else {
+      showToast('This site may refuse to embed or use advanced protections. Try opening externally.');
+      hideLoading(true);
+      _clientFallbackIndex = 0;
+    }
   }, 9000);
   if (settings.proxyLogs) console.log('Proxy open:', currentProxyUrl);
 }

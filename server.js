@@ -3,6 +3,13 @@ const path = require('path');
 const cheerio = require('cheerio');
 
 const app = express();
+let puppeteer;
+try {
+  puppeteer = require('puppeteer');
+} catch (e) {
+  console.warn('Puppeteer not available — headless rendering disabled');
+  puppeteer = null;
+}
 const port = process.env.PORT || 3000;
 const root = path.resolve(__dirname);
 
@@ -132,9 +139,51 @@ app.get('/proxy', async (req, res) => {
       }
     }
 
+    // As a final fallback, try a headless renderer (Puppeteer) if available and enabled.
+    const enableHeadless = process.env.ENABLE_HEADLESS_RENDER === 'true' || process.env.ENABLE_HEADLESS_RENDER === '1';
+    if (enableHeadless && puppeteer) {
+      try {
+        console.log('Attempting headless render for', url.toString());
+        const renderedHtml = await renderWithHeadless(url.toString());
+        if (renderedHtml) {
+          const proxied = rewriteHtml(renderedHtml, url);
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          return res.send(proxied);
+        }
+      } catch (e) {
+        console.error('Headless render failed:', e.message);
+      }
+    }
+
     return res.status(502).send('Unable to load page via proxy (including fallbacks).');
   }
 });
+
+async function renderWithHeadless(target) {
+  if (!puppeteer) return null;
+  const browser = await puppeteer.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+  let page = null;
+  try {
+    page = await browser.newPage();
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+    );
+    await page.goto(target, { waitUntil: 'networkidle2', timeout: 30000 });
+    // Give some time for dynamic content to render
+    await page.waitForTimeout(500);
+    const html = await page.content();
+    return html;
+  } finally {
+    try {
+      if (page) await page.close();
+    } catch (e) {}
+    try {
+      await browser.close();
+    } catch (e) {}
+  }
+}
 
 function rewriteHtml(html, baseUrl) {
   const $ = cheerio.load(html, { decodeEntities: false });
