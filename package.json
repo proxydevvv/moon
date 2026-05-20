@@ -2,6 +2,9 @@
   "name": "moon-proxy",
   "version": "0.0.1",
   "description": "Moon Proxy browser with server-side proxy support.",
+  "engines": {
+    "node": ">=18"
+  },
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
