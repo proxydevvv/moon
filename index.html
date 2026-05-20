@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Moon Proxy</title>
-    <link id="faviconLink" rel="icon" href="https://i.pinimg.com/1200x/25/ca/fb/25cafbf386823ddb172d0f5b24384c08.jpg" />
+    <link id="faviconLink" rel="icon" href="https://i.pinimg.com/736x/67/ad/46/67ad461f23a7d74a74ad3806a580ce9e.jpg" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -13,15 +13,24 @@
         <div class="sidebar-logo">
           <span class="moon-icon">🌙</span>
         </div>
-        <button class="sidebar-button active" data-page="home">
-          <span>Home</span>
+        <button class="sidebar-button active" data-page="home" title="Home">
+          <span class="icon">🏠</span>
         </button>
-        <button class="sidebar-button" data-page="updates">
-          <span>Update Log</span>
+        <button class="sidebar-button" data-page="browser" title="Proxy Browser">
+          <span class="icon">🌐</span>
+        </button>
+        <button class="sidebar-button" data-page="updates" title="Update Log">
+          <span class="icon">📝</span>
           <span class="badge" id="updateBadge">New</span>
         </button>
-        <button class="sidebar-button" data-page="settings">
-          <span>Settings</span>
+        <button class="sidebar-button" data-page="report" title="Report Bug">
+          <span class="icon">🐞</span>
+        </button>
+        <button class="sidebar-button" id="discordButton" title="Discord">
+          <span class="icon">💬</span>
+        </button>
+        <button class="sidebar-button" data-page="settings" title="Settings">
+          <span class="icon">⚙️</span>
         </button>
       </aside>
 
@@ -30,10 +39,8 @@
           <div class="home-card">
             <div class="home-brand">
               <div class="brand-icon">☾✦</div>
-              <div>
-                <h1>Moon Proxy</h1>
-                <p>Type a valid link like <strong>example.com</strong> or a full URL to open inside the built-in emulator.</p>
-              </div>
+              <h1>Moon Proxy</h1>
+              <p>Type a valid link like <strong>example.com</strong> or a full URL to open inside the built-in emulator.</p>
             </div>
 
             <form id="searchForm" class="search-form">
@@ -42,10 +49,12 @@
             </form>
 
             <div class="home-notes">
-              <p>Every page loads inside the proxy surface below. Use the settings panel to change language, favicon, URL name, and homepage behavior.</p>
+              <p>Type a link above and the proxy browser page will load your site inside the emulator. The sidebar stays visible while you navigate.</p>
             </div>
           </div>
+        </section>
 
+        <section id="browser" class="page">
           <div class="browser-panel" id="browserPanel">
             <div class="browser-header">
               <div class="browser-info">
@@ -61,6 +70,18 @@
             </div>
             <div class="iframe-note">This app needs to run with the Moon Proxy server. GitHub Pages alone cannot proxy blocked sites. If a page still refuses to connect, use the external open button.</div>
             <iframe id="proxyIframe" src="about:blank" title="Moon Proxy Browser"></iframe>
+          </div>
+        </section>
+
+        <section id="report" class="page">
+          <div class="panel-card">
+            <h2>Report a Bug</h2>
+            <p class="subtitle">Found an issue? Let us know and we'll fix it.</p>
+            <form id="bugForm" class="bug-form">
+              <textarea id="bugInput" placeholder="Describe the bug you found..." rows="6"></textarea>
+              <button type="submit" id="bugSubmitButton">Send Report</button>
+            </form>
+            <div id="bugStatus" class="bug-status"></div>
           </div>
         </section>
 
