@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Moon Proxy</title>
+    <link id="faviconLink" rel="icon" href="https://i.pinimg.com/1200x/25/ca/fb/25cafbf386823ddb172d0f5b24384c08.jpg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <span class="moon-icon">🌙</span>
+        </div>
+        <button class="sidebar-button active" data-page="home">
+          <span>Home</span>
+        </button>
+        <button class="sidebar-button" data-page="updates">
+          <span>Update Log</span>
+          <span class="badge" id="updateBadge">New</span>
+        </button>
+        <button class="sidebar-button" data-page="settings">
+          <span>Settings</span>
+        </button>
+      </aside>
+
+      <main class="content-area">
+        <section id="home" class="page active">
+          <div class="home-card">
+            <div class="home-brand">
+              <div class="brand-icon">☾✦</div>
+              <div>
+                <h1>Moon Proxy</h1>
+                <p>Type a valid link like <strong>example.com</strong> or a full URL to open inside the built-in emulator.</p>
+              </div>
+            </div>
+
+            <form id="searchForm" class="search-form">
+              <input id="searchInput" type="text" placeholder="Enter a website link..." autocomplete="off" />
+              <button type="submit">Open Site</button>
+            </form>
+
+            <div class="home-notes">
+              <p>Every page loads inside the proxy surface below. Use the settings panel to change language, favicon, URL name, and homepage behavior.</p>
+            </div>
+          </div>
+
+          <div class="browser-panel" id="browserPanel">
+            <div class="browser-header">
+              <div class="browser-info">
+                <span class="browser-dot"></span>
+                <span class="browser-dot"></span>
+                <span class="browser-dot"></span>
+                <span id="browserUrlLabel">about:blank</span>
+              </div>
+              <button id="homeButton" class="ghost-button">Back Home</button>
+            </div>
+            <iframe id="proxyIframe" src="about:blank" title="Moon Proxy Browser"></iframe>
+          </div>
+        </section>
+
+        <section id="updates" class="page">
+          <div class="panel-card">
+            <h2>Update Log</h2>
+            <p class="subtitle">The log refreshes automatically when new releases or changes are detected.</p>
+            <ul id="updateList" class="update-list"></ul>
+          </div>
+        </section>
+
+        <section id="settings" class="page">
+          <div class="panel-card">
+            <h2>Settings</h2>
+            <div class="setting-row">
+              <label for="languageSelect">Language</label>
+              <select id="languageSelect">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <label for="cloakInput">Active auto cloak website</label>
+              <input id="cloakInput" type="text" placeholder="about:blank or https://example.com" />
+            </div>
+            <div class="setting-row">
+              <label for="faviconInput">Favicon link</label>
+              <input id="faviconInput" type="text" placeholder="https://example.com/favicon.png" />
+            </div>
+            <div class="setting-row">
+              <label for="titleInput">URL name / page title</label>
+              <input id="titleInput" type="text" placeholder="Moon Proxy" />
+            </div>
+            <div class="setting-row">
+              <label for="themeAccent">Accent color</label>
+              <input id="themeAccent" type="color" value="#9f7fff" />
+            </div>
+            <div class="setting-row toggle-row">
+              <label>Show model badge</label>
+              <input id="badgeToggle" type="checkbox" checked />
+            </div>
+            <div class="setting-row toggle-row">
+              <label>Enable hover animations</label>
+              <input id="hoverAnimationsToggle" type="checkbox" checked />
+            </div>
+            <div class="setting-row toggle-row">
+              <label>Always keep sidebar visible</label>
+              <input id="sidebarToggle" type="checkbox" checked />
+            </div>
+            <div class="setting-row toggle-row">
+              <label>Show loading splash</label>
+              <input id="loadingToggle" type="checkbox" checked />
+            </div>
+            <div class="setting-hint">
+              <p>Settings are saved instantly and will apply across the site. Try entering <code>https://example.com</code> or <code>example.com</code>.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="modelBadge" class="model-badge">Model: v0.0.1</div>
+    <div id="toast" class="toast"></div>
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="loader-card">
+        <div class="spinner"></div>
+        <p>Moon Proxy is loading…</p>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
