@@ -48,6 +48,7 @@ function init() {
   elements.browserUrlLabel = $('#browserUrlLabel');
   elements.proxyIframe = $('#proxyIframe');
   elements.homeButton = $('#homeButton');
+  elements.openExternalButton = $('#openExternalButton');
   elements.languageSelect = $('#languageSelect');
   elements.cloakInput = $('#cloakInput');
   elements.faviconInput = $('#faviconInput');
@@ -102,9 +103,17 @@ function bindEvents() {
   elements.proxyIframe.addEventListener('load', () => {
     hideLoading();
   });
+
+  elements.openExternalButton.addEventListener('click', () => {
+    if (currentTargetUrl) {
+      window.open(currentTargetUrl, '_blank');
+    }
+  });
 }
 
 let settings = { ...defaultSettings };
+let currentTargetUrl = 'about:blank';
+let currentProxyUrl = 'about:blank';
 
 function loadSettings() {
   const saved = localStorage.getItem(storageKey);
@@ -180,10 +189,13 @@ function openProxy(value, silent = false) {
     showToast('That link is not valid. Try again with a .com, .net, or full URL.');
     return;
   }
+  currentTargetUrl = url;
+  currentProxyUrl = `/proxy?url=${encodeURIComponent(url)}`;
+  elements.openExternalButton.disabled = false;
   if (!silent) openPage('home');
   showLoading();
   elements.browserUrlLabel.textContent = url;
-  elements.proxyIframe.src = url;
+  elements.proxyIframe.src = currentProxyUrl;
 }
 
 function normalizeUrl(raw) {
@@ -196,6 +208,10 @@ function normalizeUrl(raw) {
     return `https://${trimmed}`;
   }
   return null;
+}
+
+function buildProxyUrl(url) {
+  return `/proxy?url=${encodeURIComponent(url)}`;
 }
 
 function renderUpdateLog() {

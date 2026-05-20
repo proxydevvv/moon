@@ -1,0 +1,132 @@
+const express = require('express');
+const path = require('path');
+const cheerio = require('cheerio');
+
+const app = express();
+const port = process.env.PORT || 3000;
+const root = path.resolve(__dirname);
+
+app.use(express.static(root, { extensions: ['html'] }));
+
+app.get('/proxy', async (req, res) => {
+  const targetUrl = req.query.url;
+  if (!targetUrl) {
+    return res.status(400).send('Missing url parameter');
+  }
+
+  let url;
+  try {
+    url = new URL(targetUrl);
+  } catch (error) {
+    return res.status(400).send('Invalid URL');
+  }
+
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    return res.status(400).send('Only HTTP and HTTPS URLs are supported');
+  }
+
+  try {
+    const response = await fetch(url.toString(), {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      },
+      redirect: 'follow',
+    });
+
+    const contentType = response.headers.get('content-type') || '';
+    const responseHeaders = {};
+    response.headers.forEach((value, name) => {
+      const lower = name.toLowerCase();
+      if (!['content-security-policy', 'x-frame-options', 'strict-transport-security', 'x-content-type-options'].includes(lower)) {
+        responseHeaders[name] = value;
+      }
+    });
+    Object.entries(responseHeaders).forEach(([name, value]) => res.setHeader(name, value));
+
+    if (contentType.includes('text/html')) {
+      const html = await response.text();
+      const proxied = rewriteHtml(html, url);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.send(proxied);
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return res.send(buffer);
+  } catch (error) {
+    console.error('Proxy fetch error:', error.message);
+    return res.status(502).send('Unable to load page via proxy.');
+  }
+});
+
+function rewriteHtml(html, baseUrl) {
+  const $ = cheerio.load(html, { decodeEntities: false });
+
+  $('base').remove();
+
+  const attributeMap = ['href', 'src', 'action', 'poster', 'data-src'];
+  attributeMap.forEach((attr) => {
+    $(`[${attr}]`).each((_, element) => {
+      const current = $(element).attr(attr);
+      const proxied = toProxyUrl(current, baseUrl);
+      if (proxied) {
+        $(element).attr(attr, proxied);
+      }
+    });
+  });
+
+  $('[srcset]').each((_, element) => {
+    const raw = $(element).attr('srcset');
+    if (!raw) return;
+    const rewritten = raw
+      .split(',')
+      .map((entry) => {
+        const [urlPart, descriptor] = entry.trim().split(/\s+/, 2);
+        const proxied = toProxyUrl(urlPart, baseUrl);
+        return proxied ? [proxied, descriptor].filter(Boolean).join(' ') : entry.trim();
+      })
+      .join(', ');
+    $(element).attr('srcset', rewritten);
+  });
+
+  $('meta[http-equiv="refresh"]').each((_, element) => {
+    const content = $(element).attr('content');
+    if (content) {
+      const [delay, target] = content.split(';').map((part) => part.trim());
+      if (target && target.toLowerCase().startsWith('url=')) {
+        const urlValue = target.slice(4);
+        const proxied = toProxyUrl(urlValue, baseUrl);
+        if (proxied) {
+          $(element).attr('content', `${delay};url=${proxied}`);
+        }
+      }
+    }
+  });
+
+  return $.html();
+}
+
+function toProxyUrl(value, baseUrl) {
+  if (!value || value.startsWith('javascript:') || value.startsWith('data:') || value.startsWith('mailto:') || value.startsWith('tel:') || value.startsWith('#')) {
+    return null;
+  }
+
+  let resolved;
+  try {
+    resolved = new URL(value, baseUrl).toString();
+  } catch (error) {
+    return null;
+  }
+
+  if (resolved.startsWith(baseUrl.origin + '/proxy')) {
+    return resolved;
+  }
+
+  return `/proxy?url=${encodeURIComponent(resolved)}`;
+}
+
+app.listen(port, () => {
+  console.log(`Moon Proxy server running on http://localhost:${port}`);
+});

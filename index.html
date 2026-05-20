@@ -54,8 +54,12 @@
                 <span class="browser-dot"></span>
                 <span id="browserUrlLabel">about:blank</span>
               </div>
-              <button id="homeButton" class="ghost-button">Back Home</button>
+              <div class="browser-actions">
+                <button id="openExternalButton" class="ghost-button" disabled>Open externally</button>
+                <button id="homeButton" class="ghost-button">Back Home</button>
+              </div>
             </div>
+            <div class="iframe-note">This app needs to run with the Moon Proxy server. GitHub Pages alone cannot proxy blocked sites. If a page still refuses to connect, use the external open button.</div>
             <iframe id="proxyIframe" src="about:blank" title="Moon Proxy Browser"></iframe>
           </div>
         </section>

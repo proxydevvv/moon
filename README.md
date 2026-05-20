@@ -1,18 +1,25 @@
 # moon
 
-A static Moon Proxy web app built to deploy with GitHub Pages.
+Moon Proxy is now built as a server-backed app so it can proxy blocked sites properly.
 
 Files in this repository:
 
 - `index.html` — main website entrypoint
 - `styles.css` — UI styles and animations
 - `app.js` — proxy browser logic, settings persistence, and update log
-- `.nojekyll` — disables Jekyll processing on GitHub Pages
+- `server.js` — Node.js server that fetches remote pages and removes blocking headers
+- `package.json` — Node.js dependencies and start script
+- `.gitignore` — ignore local `node_modules`
 
-To publish:
+Important:
 
-1. Push this repo to GitHub.
-2. Enable GitHub Pages for the `main` branch in repository settings.
-3. Visit the generated GitHub Pages URL.
+- GitHub Pages cannot act as a true proxy server.
+- You must host this on a Node.js-capable server (local machine, Railway, Render, Vercel serverless, etc.).
 
-This is a complete static website, not just a single file demo.
+To run locally:
+
+1. Install dependencies: `npm install`
+2. Start the server: `npm start`
+3. Open `http://localhost:3000`
+
+This setup is designed for a real proxy browser experience, not just static hosting.
