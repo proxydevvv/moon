@@ -84,7 +84,55 @@ app.get('/proxy', async (req, res) => {
     return res.send(buffer);
   } catch (error) {
     console.error('Proxy fetch error:', error.message);
-    return res.status(502).send('Unable to load page via proxy.');
+
+    // If the direct fetch failed (often due to upstream blocking), try a few public CORS proxies as fallbacks.
+    const fallbackProxies = [
+      'https://corsproxy.io/?',
+      'https://api.allorigins.win/raw?url=',
+      'https://thingproxy.freeboard.io/fetch/',
+    ];
+
+    for (const proxyBase of fallbackProxies) {
+      try {
+        const target = req.query.url || '';
+        const proxiedUrl = proxyBase + encodeURIComponent(target);
+        console.log('Trying fallback proxy:', proxiedUrl);
+        const fallbackResp = await fetch(proxiedUrl, {
+          headers: {
+            'User-Agent': 'MoonProxy/1.0',
+            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+          redirect: 'follow',
+        });
+
+        if (!fallbackResp.ok) {
+          console.warn('Fallback proxy returned non-ok status', fallbackResp.status, proxyBase);
+          continue;
+        }
+
+        const ct = fallbackResp.headers.get('content-type') || '';
+        if (ct.includes('text/html')) {
+          const html = await fallbackResp.text();
+          let baseUrl = null;
+          try {
+            baseUrl = new URL(req.query.url);
+          } catch (e) {
+            baseUrl = new URL('http://example.com');
+          }
+          const proxied = rewriteHtml(html, baseUrl);
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          return res.send(proxied);
+        }
+
+        const buffer = Buffer.from(await fallbackResp.arrayBuffer());
+        return res.send(buffer);
+      } catch (e) {
+        console.error('Fallback proxy error for', proxyBase, e.message);
+        // try next fallback
+      }
+    }
+
+    return res.status(502).send('Unable to load page via proxy (including fallbacks).');
   }
 });
 
