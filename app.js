@@ -16,17 +16,17 @@ const updates = [
   {
     version: 'v0.0.3',
     date: '2026-05-20',
-    details: 'Added bug report feature with Discord webhook integration, Discord invite button, and new favicon. Removed custom cursor.',
+    details: '🛠️ Added bug report feature with Discord webhook integration, 💬 Discord invite button, and 🖼️ new favicon. Removed custom cursor.',
   },
   {
     version: 'v0.0.2',
     date: '2026-05-20',
-    details: 'UI refreshed with a cleaner home layout, icon-only sidebar, dedicated proxy browser page, and server-backed proxy support.',
+    details: '🎨 UI refreshed with a cleaner home layout, ✨ icon-only sidebar, 🌐 dedicated proxy browser page, and 🔁 server-backed proxy support.',
   },
   {
     version: 'v0.0.1',
     date: '2026-05-20',
-    details: 'Initial release with built-in proxy emulator, sidebar navigation, settings panel, and custom moon cursor.',
+    details: '🚀 Initial release with built-in proxy emulator, 🧭 sidebar navigation, ⚙️ settings panel, and 🌙 custom moon cursor.',
   },
 ];
 
