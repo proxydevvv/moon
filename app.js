@@ -8,6 +8,8 @@ const defaultSettings = {
   hoverAnimations: true,
   showSidebar: true,
   splash: true,
+  proxyLogs: false,
+  defaultStartPage: '',
 };
 
 const updates = [
@@ -68,6 +70,8 @@ function init() {
   elements.hoverAnimationsToggle = $('#hoverAnimationsToggle');
   elements.sidebarToggle = $('#sidebarToggle');
   elements.loadingToggle = $('#loadingToggle');
+  elements.proxyLogsToggle = $('#proxyLogsToggle');
+  elements.defaultStartInput = $('#defaultStartInput');
   elements.updateList = $('#updateList');
   elements.updateBadge = $('#updateBadge');
   elements.modelBadge = $('#modelBadge');
@@ -114,6 +118,8 @@ function bindEvents() {
   elements.hoverAnimationsToggle.addEventListener('change', updateSettingsFromUI);
   elements.sidebarToggle.addEventListener('change', updateSettingsFromUI);
   elements.loadingToggle.addEventListener('change', updateSettingsFromUI);
+  elements.proxyLogsToggle.addEventListener('change', updateSettingsFromUI);
+  elements.defaultStartInput.addEventListener('change', updateSettingsFromUI);
 
   elements.proxyIframe.addEventListener('load', () => {
     hideLoading();
@@ -161,6 +167,8 @@ function loadSettings() {
   elements.hoverAnimationsToggle.checked = settings.hoverAnimations;
   elements.sidebarToggle.checked = settings.showSidebar;
   elements.loadingToggle.checked = settings.splash;
+  elements.proxyLogsToggle.checked = settings.proxyLogs || false;
+  elements.defaultStartInput.value = settings.defaultStartPage || '';
 }
 
 function saveSettings() {
@@ -177,6 +185,8 @@ function updateSettingsFromUI() {
   settings.hoverAnimations = elements.hoverAnimationsToggle.checked;
   settings.showSidebar = elements.sidebarToggle.checked;
   settings.splash = elements.loadingToggle.checked;
+  settings.proxyLogs = !!elements.proxyLogsToggle.checked;
+  settings.defaultStartPage = elements.defaultStartInput.value || '';
   saveSettings();
   applySettings();
   showToast('Settings saved.');
@@ -195,8 +205,12 @@ function applySettings(initial = false) {
   $('#updates h2').textContent = strings[settings.language]?.updateTitle || strings.en.updateTitle;
   elements.modelBadge.style.display = settings.showBadge ? 'block' : 'none';
   elements.modelBadge.textContent = `Model: ${updates[0].version}`;
-  if (initial && settings.cloakUrl && settings.cloakUrl !== 'about:blank') {
-    openProxy(settings.cloakUrl, true);
+  if (initial) {
+    if (settings.cloakUrl && settings.cloakUrl !== 'about:blank') {
+      openProxy(settings.cloakUrl, true);
+    } else if (settings.defaultStartPage && settings.defaultStartPage !== 'about:blank') {
+      openProxy(settings.defaultStartPage, true);
+    }
   }
 }
 
@@ -218,12 +232,25 @@ function openProxy(value, silent = false) {
     return;
   }
   currentTargetUrl = url;
+  // special-case about:blank — don't hit the server proxy for this
+  if (url === 'about:blank') {
+    currentProxyUrl = 'about:blank';
+    elements.openExternalButton.disabled = true;
+    if (!silent) openPage('browser');
+    elements.browserUrlLabel.textContent = 'about:blank';
+    elements.proxyIframe.src = 'about:blank';
+    hideLoading(true);
+    if (settings.proxyLogs) console.log('Opened about:blank in iframe');
+    return;
+  }
+
   currentProxyUrl = `/proxy?url=${encodeURIComponent(url)}`;
   elements.openExternalButton.disabled = false;
   if (!silent) openPage('browser');
   showLoading();
   elements.browserUrlLabel.textContent = url;
   elements.proxyIframe.src = currentProxyUrl;
+  if (settings.proxyLogs) console.log('Proxy open:', currentProxyUrl);
 }
 
 function normalizeUrl(raw) {

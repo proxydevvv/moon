@@ -30,7 +30,7 @@ body::before {
   position: fixed;
   inset: 0;
   background: url('https://i.pinimg.com/1200x/25/ca/fb/25cafbf386823ddb172d0f5b24384c08.jpg') center/cover no-repeat;
-  opacity: 0.15;
+  opacity: 0.22;
   z-index: -2;
 }
 
@@ -165,8 +165,18 @@ button {
 .home-card {
   max-width: 760px;
   margin: 0 auto 40px;
+  /* make the card slightly more transparent so the wallpaper shows through */
+  background: rgba(16, 9, 30, 0.6);
   padding: 48px 38px;
   text-align: center;
+}
+
+/* Center the home page card vertically and horizontally */
+.page#home {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
 }
 
 .home-brand {

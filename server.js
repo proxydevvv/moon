@@ -48,6 +48,13 @@ app.get('/proxy', async (req, res) => {
 
     if (contentType.includes('text/html')) {
       const html = await response.text();
+      // Detect common GitHub Pages placeholder pages and return a clearer message
+      const ghPagesPlaceholder = /There (isn(?:'|’)t|isn't) a GitHub Pages site here/i;
+      if (ghPagesPlaceholder.test(html)) {
+        const message = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Site unavailable</title></head><body style="font-family:system-ui,Segoe UI,Arial;margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#07030a;color:#fff"><div style="max-width:680px;padding:24px;border-radius:12px;background:rgba(0,0,0,0.6);text-align:center;"><h2>Site not available</h2><p>The requested site appears to be a GitHub Pages placeholder or is not configured. Try checking the URL or opening externally.</p></div></body></html>`;
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.status(404).send(message);
+      }
       const proxied = rewriteHtml(html, url);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       return res.send(proxied);
