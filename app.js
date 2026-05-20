@@ -123,12 +123,24 @@ function bindEvents() {
 
   elements.proxyIframe.addEventListener('load', () => {
     hideLoading();
+    if (window._proxyLoadTimer) {
+      clearTimeout(window._proxyLoadTimer);
+      window._proxyLoadTimer = null;
+    }
+    try {
+      const doc = elements.proxyIframe.contentDocument;
+      if (doc && doc.body && doc.body.textContent && doc.body.textContent.includes('Site not available')) {
+        showToast('Proxied site is unavailable (placeholder). Try opening externally.');
+      }
+    } catch (e) {
+      if (settings.proxyLogs) console.log('Iframe load: cross-origin or inaccessible document', e);
+      showToast('Site loaded but is cross-origin or blocked; proxy may not work for this site.');
+    }
   });
 
+  // Open externally behavior — per user request open as about:blank
   elements.openExternalButton.addEventListener('click', () => {
-    if (currentTargetUrl) {
-      window.open(currentTargetUrl, '_blank');
-    }
+    window.open('about:blank', '_blank');
   });
 
   elements.bugForm.addEventListener('submit', submitBugReport);
@@ -140,6 +152,20 @@ function bindEvents() {
     } else {
       window.open(discordUrl, '_blank');
     }
+  });
+
+  // Listen for a small helper message injected into proxied pages to detect readiness
+  window.addEventListener('message', (ev) => {
+    try {
+      if (ev && ev.data && ev.data.moonProxyReady) {
+        if (window._proxyLoadTimer) { clearTimeout(window._proxyLoadTimer); window._proxyLoadTimer = null; }
+        hideLoading(true);
+        if (settings.proxyLogs) console.log('Received proxied ready message', ev.data);
+        if (ev.data.title && /site not available/i.test(ev.data.title)) {
+          showToast('Proxied site reported it is unavailable.');
+        }
+      }
+    } catch (e) {}
   });
 }
 
@@ -250,8 +276,15 @@ function openProxy(value, silent = false) {
   showLoading();
   elements.browserUrlLabel.textContent = url;
   elements.proxyIframe.src = currentProxyUrl;
+  if (window._proxyLoadTimer) clearTimeout(window._proxyLoadTimer);
+  // If the iframe doesn't report ready within a few seconds, alert the user — many large sites block embedding (e.g., YouTube)
+  window._proxyLoadTimer = setTimeout(() => {
+    showToast('This site may refuse to embed or use advanced protections. Try opening externally.');
+    hideLoading(true);
+  }, 9000);
   if (settings.proxyLogs) console.log('Proxy open:', currentProxyUrl);
 }
+
 
 function normalizeUrl(raw) {
   const trimmed = raw.trim();

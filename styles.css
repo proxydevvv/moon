@@ -174,10 +174,11 @@ button {
 /* Center the home page card vertically and horizontally */
 .page#home {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: calc(100vh - 120px);
-  padding-top: 72px;
+  padding-top: 120px;
 }
 
 .home-brand {

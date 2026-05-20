@@ -38,9 +38,29 @@ app.get('/proxy', async (req, res) => {
 
     const contentType = response.headers.get('content-type') || '';
     const responseHeaders = {};
+    const strippedHeaders = [
+      'content-security-policy',
+      'x-frame-options',
+      'strict-transport-security',
+      'x-content-type-options',
+      'cross-origin-opener-policy',
+      'cross-origin-embedder-policy',
+      'cross-origin-resource-policy',
+      'permissions-policy',
+      'document-policy',
+      'origin-trial',
+      'report-to',
+      'reporting-endpoints',
+      'expect-ct',
+      'referrer-policy',
+      'x-permitted-cross-domain-policies',
+      'x-download-options',
+      'x-content-security-policy',
+      'x-webkit-csp',
+    ];
     response.headers.forEach((value, name) => {
       const lower = name.toLowerCase();
-      if (!['content-security-policy', 'x-frame-options', 'strict-transport-security', 'x-content-type-options'].includes(lower)) {
+      if (!strippedHeaders.includes(lower)) {
         responseHeaders[name] = value;
       }
     });
@@ -72,6 +92,28 @@ function rewriteHtml(html, baseUrl) {
   const $ = cheerio.load(html, { decodeEntities: false });
 
   $('base').remove();
+
+  // Remove Content-Security-Policy meta tags which often block script execution or framing
+  $('meta[http-equiv="Content-Security-Policy"]').remove();
+  $('meta[http-equiv="content-security-policy"]').remove();
+  $('meta[name="content-security-policy"]').remove();
+  $('meta[name="Content-Security-Policy"]').remove();
+
+  // Generic removal for any meta tags that reference content-security-policy
+  $('meta').each((_, el) => {
+    const httpEquiv = ($(el).attr('http-equiv') || '').toLowerCase();
+    const name = ($(el).attr('name') || '').toLowerCase();
+    if (httpEquiv.includes('content-security-policy') || name.includes('content-security-policy')) {
+      $(el).remove();
+    }
+  });
+
+  // Remove nonce attributes on scripts/styles to avoid blocking injected helpers
+  $('[nonce]').each((_, el) => $(el).removeAttr('nonce'));
+  $('script').each((_, el) => $(el).removeAttr('nonce'));
+
+  // Remove sandbox on nested iframes which can prevent functionality
+  $('iframe[sandbox]').each((_, el) => $(el).removeAttr('sandbox'));
 
   const attributeMap = ['href', 'src', 'action', 'poster', 'data-src'];
   attributeMap.forEach((attr) => {
@@ -111,6 +153,14 @@ function rewriteHtml(html, baseUrl) {
       }
     }
   });
+
+  // Inject a small helper script that notifies the parent window when the proxied page is ready.
+  // This helps the client detect pages that still fail to behave inside the iframe.
+  try {
+    $('body').append('<script>try{window.parent.postMessage({moonProxyReady:true,title:document.title},"*");}catch(e){};<\/script>');
+  } catch (e) {
+    // ignore injection errors
+  }
 
   return $.html();
 }
